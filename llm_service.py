@@ -3,7 +3,7 @@ from config import settings
 
 client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
-MODEL_NAME = "gemini-2.0-flash"  # Using 2.0 Flash as it's the current state-of-the-art for fast parsing
+MODEL_NAME = "gemini-2.5-flash"
 
 SYSTEM_PROMPT = """
 You are a menu parsing assistant for KAIST Cafeteria. Your task is to extract menu items from HTML and check for pork.
