@@ -4,7 +4,7 @@ import pytz
 from typing import Optional
 
 from scraper import get_all_cafeteria_html
-from llm_service import process_menu_with_gemini
+from llm_service import process_all_menus_with_gemini
 from telegram_service import send_telegram_message
 
 app = FastAPI(title="KAIST Cafeteria Menu Bot")
@@ -12,33 +12,36 @@ app = FastAPI(title="KAIST Cafeteria Menu Bot")
 KST = pytz.timezone("Asia/Seoul")
 
 async def run_broadcast_task(meal: str, date_str: str = None):
-    """Orchestrates the scraper, LLM, and Telegram broadcast."""
+    """Orchestrates the scraper, LLM, and multi-chat Telegram broadcast."""
     print(f"Starting broadcast task for {meal} on {date_str or 'today'}")
     
-    # 1. Fetch HTML
-    html_data = await get_all_cafeteria_html(date_str)
-    
-    # 2. Process each cafeteria
-    for name, html in html_data.items():
-        try:
-            # Parse with LLM
-            # print(html)
-            formatted_message = await process_menu_with_gemini(name, meal, html)
-
-            
-            # Print for local debugging (as requested)
-            print(f"--- LLM Output for {name} ---")
-            print(formatted_message)
-            print("-" * 30)
-            
-            # Send to Telegram
-            success = await send_telegram_message(formatted_message)
+    try:
+        # 1. Fetch HTML for all cafeterias
+        html_data = await get_all_cafeteria_html(date_str)
+        
+        # 2. Process all menus in a single LLM call
+        formatted_message = await process_all_menus_with_gemini(meal, html_data)
+        
+        # Print for local debugging
+        print(f"--- Combined LLM Output for {meal} ---")
+        print(formatted_message)
+        print("-" * 30)
+        
+        # 3. Fetch all active chat IDs
+        from telegram_service import get_active_chat_ids
+        chat_ids = await get_active_chat_ids()
+        print(f"Broadcasting to {len(chat_ids)} total chats: {chat_ids}")
+        
+        # 4. Broadcast to all chats
+        for chat_id in chat_ids:
+            success = await send_telegram_message(formatted_message, chat_id)
             if success:
-                print(f"Successfully sent {name} menu to Telegram.")
+                print(f"Sent successfully to {chat_id}")
             else:
-                print(f"Failed to send {name} menu to Telegram.")
-        except Exception as e:
-            print(f"Error processing {name}: {str(e)}")
+                print(f"Failed to send to {chat_id}")
+                
+    except Exception as e:
+        print(f"Critical error in broadcast task: {str(e)}")
 
 @app.get("/")
 def health_check():
