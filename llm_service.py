@@ -3,7 +3,7 @@ from config import settings
 
 client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
-MODEL_NAME = "gemini-2.5-flash"
+MODEL_NAME = "gemini-2.0-flash"
 
 SYSTEM_PROMPT = """
 You are a menu parsing assistant for KAIST Cafeteria. Your task is to extract menu items from HTML and check for pork.
@@ -40,6 +40,10 @@ DESIRED FORMAT:
 async def process_menu_with_gemini(cafeteria_name: str, meal_type: str, html_content: str) -> str:
     """Uses Gemini to parse HTML and generate the final message."""
     prompt = f"Cafeteria: {cafeteria_name}\nMeal Type: {meal_type}\n\nHTML Content:\n{html_content}"
+    
+    # Save to file for debugging (as requested)
+    with open("debug_prompt.txt", "w", encoding="utf-8") as f:
+        f.write(prompt)
     
     response = client.models.generate_content(
         model=MODEL_NAME,

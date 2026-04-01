@@ -22,7 +22,14 @@ async def run_broadcast_task(meal: str, date_str: str = None):
     for name, html in html_data.items():
         try:
             # Parse with LLM
+            # print(html)
             formatted_message = await process_menu_with_gemini(name, meal, html)
+
+            
+            # Print for local debugging (as requested)
+            print(f"--- LLM Output for {name} ---")
+            print(formatted_message)
+            print("-" * 30)
             
             # Send to Telegram
             success = await send_telegram_message(formatted_message)
@@ -37,7 +44,7 @@ async def run_broadcast_task(meal: str, date_str: str = None):
 def health_check():
     return {"status": "ok", "time": datetime.now(KST).isoformat()}
 
-@app.post("/trigger")
+@app.post("/api/menu/")
 def trigger_broadcast(
     background_tasks: BackgroundTasks,
     meal: str = Query(..., regex="^(lunch|dinner)$"),
