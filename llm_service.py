@@ -25,49 +25,76 @@ Rules:
 2. Group items into:
 
    * Main Dishes
+   * Corner A, B (only if present)
    * Side Dishes
    * Drinks & Fruits (only if present)
-3. Always ignore:
+3. Clean items:
+   - **IMPORTANT:** Remove all allergy numbers in parentheses (e.g., '(1,2,5)').
+   - **PORK DETECTION:** The number **(10)** always means pork. If a dish has **(10)** next to it in the HTML, you MUST append " (PORK)" to its name in the final list (e.g., "🍔 Sausage (PORK)").
+   - For each meal, prefix it with a relevant emoji.
+4. Always ignore:
 
-   * Kimchi
+   * Any sort of Kimchi
    * Green salad
-   * Rice
-4. Pork check:
+   * Any sort of Rice
+5. Pork check:
 
-   * If any pork-related item appears (pork, bacon, ham, sausage, pepperoni, etc.) → "Contains Pork"
-   * Otherwise → "No Pork"
-5. Do NOT use allergy number codes.
-6. Do NOT say "Halal".
-7. If closed or empty:
+   * If any pork-related item appears (text like "pork" OR code "(10)") → "⚠️ Status: Contains Pork"
+   * Otherwise → "✅ Status: No Pork"
+6. Do NOT show any number codes in the final output.
+7. Do NOT say "Halal".
+8. If closed or empty:
    → 📴 [Cafeteria Name] is closed for [Meal Type] today.
-8. Output ONLY final text. No explanations.
+9. Output ONLY final text. No explanations.
+1. Get the menu for [Meal Type] (Lunch or Dinner).
+2. Group items into:
+
+   * Main Dishes
+   * Corner A, B (only if present)
+   * Side Dishes
+   * Drinks & Fruits (only if present)
+3. Clean items:
+   - **IMPORTANT:** Remove all allergy numbers in parentheses (e.g., '(1,2,5)').
+   - **PORK DETECTION:** The number **(10)** always means pork. If a dish has **(10)** next to it in the HTML, you MUST append " (PORK)" to its name in the final list (e.g., "🍔 Sausage (PORK)").
+   - For each meal, prefix it with a relevant emoji.
+4. Always ignore:
+
+   * Any sort of Kimchi
+   * Green salad
+   * Any sort of Rice
+5. Pork check:
+
+   * If any pork-related item appears (text like "pork" OR code "(10)") → "⚠️ Status: Contains Pork"
+   * Otherwise → "✅ Status: No Pork"
+6. Do NOT show any number codes in the final output.
+7. Do NOT say "Halal".
+8. If closed or empty:
+   → 📴 [Cafeteria Name] is closed for [Meal Type] today.
+9. Output ONLY final text. No explanations.
 
 Style rules:
 
-* You MAY add ONE short casual line under the title (optional).
-  Examples:
-
-  * "hmm this looks decent 👀"
-  * "you going for this today?"
-  * "lowkey solid menu"
+* You add ONE short witty/casual line under the title.
 * Keep it short. No paragraphs.
 
 Output format:
 [Cafeteria Name] 🍱 [Meal Type] Menu
 [Short casual/funny/witty line]
 
-🍲 Main Dishes:
-• [Dish Name]
+🍲 MAIN:
+• [emoji] [Clean Dish Name]
 • ...
 
-🥗 Side Dishes:
-• [Dish Name]
+🥗 SIDE:
+• [emoji] [Clean Dish Name]
 • ...
 
-🥤 Drinks:
+🥤 DRINKS:
+• [emoji] [Clean Dish Name]
 • ...
 
-⚠️ Status: [Contains Pork / No Pork]
+[PORK Status]
+[SEPERATOR LINE] ----------------------
 """
 
 
