@@ -1,0 +1,61 @@
+name: Daily Cafeteria Broadcast
+
+on:
+  schedule:
+    - cron: '45 1,7 * * *' # 10:45 AM and 4:45 PM KST
+  workflow_dispatch: # allows manual trigger
+
+jobs:
+  broadcast:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Menu HTMLs
+        run: |
+          echo "Fetching West Cafeteria..."
+          curl -s -L "https://www.kaist.ac.kr/en/html/campus/053001.html?dvs_cd=west" -o west.html
+          
+          echo "Fetching KAIMARU..."
+          curl -s -L "https://www.kaist.ac.kr/en/html/campus/053001.html?dvs_cd=fclt" -o kaimaru.html
+          
+          # Basic validation
+          WEST_SIZE=$(stat -c%s west.html)
+          KAIMARU_SIZE=$(stat -c%s kaimaru.html)
+          echo "West: $WEST_SIZE bytes, KAIMARU: $KAIMARU_SIZE bytes"
+
+      - name: Push to Cloud Run Bot
+        env:
+            BOT_URL: ${{ secrets.BOT_URL }}
+            GIT_ACTIONS_WEBHOOK_SECRET: ${{ secrets.GIT_ACTIONS_WEBHOOK_SECRET }}
+        run: |
+            # Detect meal based on KST time (GitHub runners are UTC)
+            # 01:45 UTC is 10:45 KST -> Lunch
+            # 07:45 UTC is 16:45 KST -> Dinner
+            HOUR=$(date +%H)
+            if [ "$HOUR" -lt "05" ]; then
+                MEAL="lunch"
+            else
+                MEAL="dinner"
+            fi
+            echo "Determined meal: $MEAL"
+
+            # Create JSON payload using python heredoc for safety
+            MEAL=$MEAL python3 <<EOF
+import json, os
+west = open('west.html').read()
+kaimaru = open('kaimaru.html').read()
+payload = {
+    'meal': os.environ.get('MEAL', 'lunch'),
+    'html_data': {
+        'West Cafeteria': west,
+        'KAIMARU': kaimaru
+    }
+}
+with open('payload.json', 'w') as f:
+    json.dump(payload, f)
+EOF
+            
+            echo "Pushing data to bot..."
+            curl -X POST "$BOT_URL" \
+                 -H "Content-Type: application/json" \
+                 -H "x-auth-key: $GIT_ACTIONS_WEBHOOK_SECRET" \
+                 -d @payload.json

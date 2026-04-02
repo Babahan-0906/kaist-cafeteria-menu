@@ -6,3 +6,4 @@ python-dotenv
 pydantic-settings
 pytz
 beautifulsoup4
+curl-cffi
