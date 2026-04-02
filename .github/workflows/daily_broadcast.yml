@@ -40,19 +40,19 @@ jobs:
 
             # Create JSON payload using python heredoc for safety
             MEAL=$MEAL python3 <<EOF
-import json, os
-west = open('west.html').read()
-kaimaru = open('kaimaru.html').read()
-payload = {
-    'meal': os.environ.get('MEAL', 'lunch'),
-    'html_data': {
-        'West Cafeteria': west,
-        'KAIMARU': kaimaru
-    }
-}
-with open('payload.json', 'w') as f:
-    json.dump(payload, f)
-EOF
+            import json, os
+            west = open('west.html').read()
+            kaimaru = open('kaimaru.html').read()
+            payload = {
+                'meal': os.environ.get('MEAL', 'lunch'),
+                'html_data': {
+                    'West Cafeteria': west,
+                    'KAIMARU': kaimaru
+                }
+            }
+            with open('payload.json', 'w') as f:
+                json.dump(payload, f)
+            EOF
             
             echo "Pushing data to bot..."
             curl -X POST "$BOT_URL" \

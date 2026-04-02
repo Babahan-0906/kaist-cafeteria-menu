@@ -1,7 +1,6 @@
 import logging
 import os
 
-from scraper import get_all_cafeteria_html
 from llm_service import process_all_menus_with_gemini
 from telegram_service import send_telegram_message
 from config import settings
@@ -65,29 +64,9 @@ async def process_menu_and_broadcast(meal: str, html_data: Dict[str, str]):
     except Exception as e:
         logger.exception(f"critical error in broadcast task: {str(e)}")
 
-async def run_broadcast_task(meal: str, date_str: str = None):
-    """legacy orchestrator that fetches html itself (will likely fail on cloud run)"""
-    logger.info(f"starting pull-based broadcast task for {meal} on {date_str or 'today'}")
-    try:
-        html_data = await get_all_cafeteria_html(date_str)
-        await process_menu_and_broadcast(meal, html_data)
-    except Exception as e:
-        logger.error(f"pull-based fetch failed: {e}")
-
 @app.get("/")
 def health_check():
     return {"status": "ok", "time": datetime.now(KST).isoformat()}
-
-@app.post("/api/menu/")
-def trigger_broadcast(
-    background_tasks: BackgroundTasks,
-    meal: str = Query(..., pattern="^(lunch|dinner)$"),
-    date: Optional[str] = Query(None, pattern=r"^\d{4}-\d{2}-\d{2}$")
-):
-    """legacy endpoint triggered by cloud scheduler"""
-    logger.info(f"received pull-based broadcast trigger for {meal}")
-    background_tasks.add_task(run_broadcast_task, meal.capitalize(), date)
-    return {"message": f"broadcast for {meal} triggered."}
 
 @app.post("/api/menu/push/")
 async def push_menu(

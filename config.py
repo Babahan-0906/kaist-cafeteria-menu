@@ -10,7 +10,6 @@ class Settings(BaseSettings):
     # configuration
     PORT: int = 8080
     HOST: str = "0.0.0.0"
-    DEBUG_SCRAPER: bool = False
     GIT_ACTIONS_WEBHOOK_SECRET: str = ""
     
     model_config = SettingsConfigDict(
