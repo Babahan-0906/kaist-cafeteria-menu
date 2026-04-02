@@ -1,6 +1,8 @@
 from google import genai
+import logging
 from config import settings
 
+logger = logging.getLogger("llm")
 client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
 MODEL_NAME = "gemini-2.0-flash"
@@ -20,57 +22,26 @@ Your job:
 Read HTML → extract the menu → check for pork → format output.
 
 Rules:
-
 1. Get the menu for [Meal Type] (Lunch or Dinner).
 2. Group items into:
-
-   * Main Dishes
-   * Corner A, B (only if present)
-   * Side Dishes
-   * Drinks & Fruits (only if present)
+   * 🍲 MAIN
+   * 🍱 CORNER A, B (only if present)
+   * 🥗 SIDE
+   * 🥤 DRINKS & FRUITS (only if present)
 3. Clean items:
    - **IMPORTANT:** Remove all allergy numbers in parentheses (e.g., '(1,2,5)').
    - **PORK DETECTION:** The number **(10)** always means pork. If a dish has **(10)** next to it in the HTML, you MUST append " (PORK)" to its name in the final list (e.g., "🍔 Sausage (PORK)").
+   - If any pork-related item appears (text like "pork" OR code "(10)") → "⚠️ Status: Contains Pork"
    - For each meal, prefix it with a relevant emoji.
 4. Always ignore:
-
    * Any sort of Kimchi
    * Green salad
    * Any sort of Rice
-5. Pork check:
-
-   * If any pork-related item appears (text like "pork" OR code "(10)") → "⚠️ Status: Contains Pork"
-   * Otherwise → "✅ Status: No Pork"
-6. Do NOT show any number codes in the final output.
-7. Do NOT say "Halal".
-8. If closed or empty:
+5. Do NOT show any number codes in the final output.
+6. Do NOT say "Halal".
+7. If closed or empty:
    → 📴 [Cafeteria Name] is closed for [Meal Type] today.
-9. Output ONLY final text. No explanations.
-1. Get the menu for [Meal Type] (Lunch or Dinner).
-2. Group items into:
-
-   * Main Dishes
-   * Corner A, B (only if present)
-   * Side Dishes
-   * Drinks & Fruits (only if present)
-3. Clean items:
-   - **IMPORTANT:** Remove all allergy numbers in parentheses (e.g., '(1,2,5)').
-   - **PORK DETECTION:** The number **(10)** always means pork. If a dish has **(10)** next to it in the HTML, you MUST append " (PORK)" to its name in the final list (e.g., "🍔 Sausage (PORK)").
-   - For each meal, prefix it with a relevant emoji.
-4. Always ignore:
-
-   * Any sort of Kimchi
-   * Green salad
-   * Any sort of Rice
-5. Pork check:
-
-   * If any pork-related item appears (text like "pork" OR code "(10)") → "⚠️ Status: Contains Pork"
-   * Otherwise → "✅ Status: No Pork"
-6. Do NOT show any number codes in the final output.
-7. Do NOT say "Halal".
-8. If closed or empty:
-   → 📴 [Cafeteria Name] is closed for [Meal Type] today.
-9. Output ONLY final text. No explanations.
+8. Output ONLY final text. No descriptions of your thinking.
 
 Style rules:
 
@@ -99,24 +70,27 @@ Output format:
 
 
 async def process_all_menus_with_gemini(meal_type: str, cafeterias_html: dict[str, str]) -> str:
-    """Uses Gemini to parse multiple cafeteria HTML blocks in a single request."""
-    # Build a combined prompt with delimiters
+    """parse menus via gemini"""
+    # build combined prompt
     prompt_parts = [f"Meal Type: {meal_type}\n"]
     for name, html in cafeterias_html.items():
         prompt_parts.append(f"--- START CAFETERIA: {name} ---\n{html}\n--- END CAFETERIA: {name} ---")
     
     combined_prompt = "\n\n".join(prompt_parts)
+    logger.info(f"sending combined prompt to gemini (length: {len(combined_prompt)} bytes)...")
     
-    # Save to file for debugging
-    with open("debug_prompt.txt", "w", encoding="utf-8") as f:
-        f.write(combined_prompt)
-    
-    response = client.models.generate_content(
-        model=MODEL_NAME,
-        config={
-            "system_instruction": SYSTEM_PROMPT,
-        },
-        contents=combined_prompt
-    )
-    
-    return response.text.strip()
+    try:
+        response = client.models.generate_content(
+            model=MODEL_NAME,
+            config={
+                "system_instruction": SYSTEM_PROMPT,
+            },
+            contents=combined_prompt
+        )
+        
+        result = response.text.strip()
+        logger.info(f"received response from gemini (length: {len(result)} bytes)")
+        return result
+    except Exception as e:
+        logger.error(f"gemini api error: {str(e)}")
+        raise

@@ -1,0 +1,8 @@
+.env
+.git
+__pycache__
+*.pyc
+venv/
+.pytest_cache
+debug_prompt.txt
+test_curl.html
