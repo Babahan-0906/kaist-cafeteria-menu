@@ -1,0 +1,34 @@
+name: KAIST Firewall Smoke Test
+
+on:
+  workflow_dispatch: # allows manual trigger
+
+jobs:
+  test_connection:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Try to fetch KAIST Menu
+        run: |
+          echo "Connecting to KAIST..."
+          # use -v to see the system-level handshake
+          curl -v -L "https://www.kaist.ac.kr/en/html/campus/053001.html?dvs_cd=west" -o test.html
+          
+          echo "--- Result Analysis ---"
+          SIZE=$(stat -c%s test.html)
+          echo "Total Size: $SIZE bytes"
+          
+          if [ $SIZE -lt 5000 ]; then
+             echo "⚠️ WARNING: Response is too small. Likely an error page."
+             cat test.html
+          else
+             echo "✅ Response size looks healthy (~$SIZE bytes)."
+          fi
+          
+          echo "--- Searching for Menu Container ---"
+          if grep -q "tab_item_1" test.html; then
+             echo "✅ FOUND 'tab_item_1'!"
+             # Show a bit of context around the container
+             grep -C 5 "tab_item_1" test.html | head -n 20
+          else
+             echo "❌ FAILED: Container 'tab_item_1' not found in HTML."
+          fi
