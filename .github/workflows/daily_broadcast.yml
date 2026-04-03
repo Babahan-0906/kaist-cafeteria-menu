@@ -2,7 +2,7 @@ name: Daily Cafeteria Broadcast
 
 on:
   schedule:
-    - cron: '45 1,7 * * *' # 10:45 AM and 4:45 PM KST
+    - cron: '15 1,7 * * *' # 10:45 AM and 4:45 PM KST
   workflow_dispatch: # allows manual trigger
 
 jobs:
