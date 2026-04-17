@@ -50,7 +50,6 @@ Rules:
 6. Output format:
 
 [CAFETERIA NAME] 🍱 [Meal Type] Menu
-[Short casual/funny line]
 
 🍲 MAIN:
 • [emoji] [Dish Name]
