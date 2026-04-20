@@ -20,6 +20,8 @@ from datetime import datetime
 import pytz
 from typing import Optional, Dict
 
+DEBUG_MODE = False # Set to False for production
+
 class PushMenuRequest(BaseModel):
     meal: str
     date_str: Optional[str] = None
@@ -32,6 +34,8 @@ KST = pytz.timezone("Asia/Seoul")
 async def startup_event():
     """log secret presence on startup"""
     logger.info("--- starting application ---")
+    if DEBUG_MODE:
+        logger.info("!!! RUNNING IN DEBUG MODE (Telegram send disabled) !!!")
     logger.info(f"telegram_bot_token: {'present' if settings.TELEGRAM_BOT_TOKEN else 'missing'}")
     logger.info(f"telegram_chat_id: {'present' if settings.TELEGRAM_CHAT_ID else 'missing'}")
     logger.info(f"gemini_api_key: {'present' if settings.GEMINI_API_KEY else 'missing'}")
@@ -41,9 +45,12 @@ async def startup_event():
 async def process_menu_and_broadcast(meal: str, html_data: Dict[str, str]):
     """core logic to process html and send to telegram"""
     try:
+        # Get current date in KST
+        current_date = datetime.now(KST).strftime("%Y-%m-%d (%a)")
+        
         # process menus via llm
-        logger.info("processing menus via gemini...")
-        formatted_message = await process_all_menus_with_gemini(meal, html_data)
+        logger.info(f"processing menus for {current_date} via gemini...")
+        formatted_message = await process_all_menus_with_gemini(meal, html_data, current_date)
         
         # debug print
         logger.info(f"combined llm output length: {len(formatted_message)}")
@@ -56,6 +63,10 @@ async def process_menu_and_broadcast(meal: str, html_data: Dict[str, str]):
         
         # broadcast to all chats
         for chat_id in chat_ids:
+            if DEBUG_MODE:
+                logger.info(f"DEBUG: Skipping telegram send to {chat_id}")
+                continue
+                
             success = await send_telegram_message(formatted_message, chat_id)
             if success:
                 logger.info(f"sent successfully to {chat_id}")
@@ -82,6 +93,11 @@ async def push_menu(
         raise HTTPException(status_code=403, detail="unauthorized")
         
     logger.info(f"received push-based menu for {request.meal}")
+    for name, html in request.html_data.items():
+        logger.info(f"Received HTML for {name}: {len(html)} bytes")
+        # Log a snippet of the HTML for verification
+        logger.info(f"HTML snippet for {name}: {html[:500]}...")
+
     background_tasks.add_task(
         process_menu_and_broadcast, 
         request.meal.capitalize(), 
