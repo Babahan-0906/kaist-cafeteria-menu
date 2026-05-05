@@ -5,7 +5,7 @@ from config import settings
 logger = logging.getLogger("llm")
 client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
-MODEL_NAME = "gemini-2.0-flash"
+MODEL_NAME = "gemini-2.5-flash"
 
 SYSTEM_PROMPT = """
 You are a Cafeteria Menu Bot.
